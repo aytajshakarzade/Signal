@@ -118,7 +118,7 @@ const SUPABASE_KEY_TYPE = !SUPABASE_URL ? 'url_missing'
     : 'server_key_candidate')
   : SUPABASE_KEY_CANDIDATES.length ? 'publishable_key_only' : 'key_missing';
 const SUPABASE_AUTH_CONFIGURED = Boolean(SUPABASE_URL && SUPABASE_ADMIN_KEY);
-const APP_BUILD = 'v20-mobile-layout-signup-fix';
+const APP_BUILD = 'v21-username-password-auth';
 // IP-based one-account enforcement blocks legitimate sign-ups on shared Wi-Fi/mobile networks.
 // Keep it opt-in through ONE_ACCOUNT_PER_IP=true; rate limiting still protects the endpoint.
 const ONE_ACCOUNT_PER_IP = String(process.env.ONE_ACCOUNT_PER_IP || '').toLowerCase() === 'true';
@@ -181,7 +181,7 @@ function cookieHeader(token, maxAge) {
 }
 function sessionCookieClear() { return `${SESSION_COOKIE}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0${NODE_ENV === 'production' ? '; Secure' : ''}`; }
 function tokenHash(token) { return createHash('sha256').update(token).digest('hex'); }
-function safeUser(user) { return { id: user.id, name: user.name, email: user.email, emailVerified: Boolean(user.verified), profileType: user.profileType || 'creator', referralCode: user.referralCode || '', rewardPoints: Number(user.rewardPoints) || 0, plan: ['free','go','pro'].includes(user.plan) ? user.plan : 'free', createdAt: user.createdAt }; }
+function safeUser(user) { return { id: user.id, name: user.name, username: user.username || '', email: user.username ? '' : user.email, emailVerified: Boolean(user.verified), profileType: user.profileType || 'creator', referralCode: user.referralCode || '', rewardPoints: Number(user.rewardPoints) || 0, plan: ['free','go','pro'].includes(user.plan) ? user.plan : 'free', createdAt: user.createdAt }; }
 function clientIpHash(req) { const ip = String(req.socket.remoteAddress || 'unknown').replace(/^::ffff:/, ''); return createHash('sha256').update(ip).digest('hex'); }
 function createReferralCode() { return randomBytes(5).toString('hex').toUpperCase(); }
 function round(value, digits = 2) { const n = Number(value); return Number.isFinite(n) ? Number(n.toFixed(digits)) : 0; }
@@ -1214,49 +1214,27 @@ async function handleApi(req, res, url) {
     if (rateLimited(req, 'register', 6)) return json(res, 429, { ok: false, code: 'rate_limited', message: 'Çox sayda cəhd edildi. Bir neçə dəqiqə sonra yenidən cəhd et.' });
     const input = await bodyJson(req);
     const name = normalizeText(input.name, 100);
-    const email = normalizeText(input.email, 254).toLowerCase();
+    const username = normalizeText(input.username, 32).toLowerCase();
     const password = typeof input.password === 'string' ? input.password : '';
     const profileType = ['creator','company','agency','personal_brand','freelancer'].includes(input.profileType) ? input.profileType : 'creator';
     const referralCode = normalizeText(input.referralCode, 40).toUpperCase();
-    if (name.length < 2) return json(res, 400, { ok: false, code: 'invalid_name', message: 'Ad və soyad ən azı 2 simvol olmalıdır.' });
-    if (!validateEmail(email)) return json(res, 400, { ok: false, code: 'invalid_email', message: 'Düzgün e-poçt ünvanı daxil et.' });
+    if (name.length < 2) return json(res, 400, { ok: false, code: 'invalid_name', message: 'Ad ən azı 2 simvol olmalıdır.' });
+    if (!/^[a-z0-9_.-]{3,32}$/.test(username)) return json(res, 400, { ok: false, code: 'invalid_username', message: 'İstifadəçi adı 3–32 simvol olmalı, yalnız ingilis hərfləri, rəqəm, nöqtə, _ və - istifadə etməlidir.' });
     if (password.length < 8 || password.length > 128) return json(res, 400, { ok: false, code: 'invalid_password', message: 'Şifrə 8–128 simvol aralığında olmalıdır.' });
-    let user = db.users.find(u => u.email === email);
-    if (user?.verified) return json(res, 409, { ok: false, code: 'email_exists', message: 'Bu e-poçtla hesab artıq mövcuddur. Daxil ol və ya şifrəni yenilə.' });
+    if (db.users.some(u => (u.username || '').toLowerCase() === username || (u.email || '').toLowerCase() === username)) return json(res, 409, { ok: false, code: 'username_exists', message: 'Bu istifadəçi adı artıq istifadə olunur. Başqa ad seç.' });
     const ipHash = clientIpHash(req);
-    if (!user && ONE_ACCOUNT_PER_IP && db.users.some(u => u.verified && u.signupIpHash && u.signupIpHash === ipHash)) return json(res, 409, { ok: false, code: 'ip_account_limit', message: 'Bu şəbəkədən yeni hesab yaratmaq hazırda mümkün olmadı. Bir az sonra yenidən cəhd et və ya dəstəklə əlaqə saxla.' });
-    if (!user) {
-      const hashed = await passwordDigest(password);
-      const referrer = referralCode ? db.users.find(u => u.referralCode === referralCode && u.verified && u.email !== email) : null;
-      user = { id: randomUUID(), name, email, profileType, plan: 'free', stripeCustomerId: '', stripeSubscriptionId: '', passwordSalt: hashed.salt, passwordHash: hashed.hash, verified: false, createdAt: new Date().toISOString(), verifyTokenHash: '', verifyExpiresAt: 0, signupIpHash: ipHash, referralCode: createReferralCode(), referredBy: referrer?.id || '', rewardPoints: 0, referralRewardProcessed: false };
-      while (db.users.some(u => u.referralCode === user.referralCode)) user.referralCode = createReferralCode();
-      db.users.push(user);
-    } else {
-      // Pending accounts may safely correct their display name/password before verification.
-      const hashed = await passwordDigest(password);
-      user.name = name;
-      user.profileType = profileType;
-      user.passwordSalt = hashed.salt;
-      user.passwordHash = hashed.hash;
-    }
-    // Supabase is an optional identity mirror; this app's own verified local
-    // account/session remains authoritative. A broken remote Auth URL or key must
-    // not strand sign-ups before the app can issue its own email verification.
-    if ((SUPABASE_URL || SUPABASE_KEY_CANDIDATES.length) && !SUPABASE_AUTH_CONFIGURED) {
-      console.warn(`Optional Supabase Auth sync is incomplete (type ${SUPABASE_KEY_TYPE}); continuing with local email verification.`);
-    }
-    if (SUPABASE_AUTH_CONFIGURED) {
-      try {
-        await ensureSupabaseAuthUser(user, password);
-      } catch (error) {
-        const status = Number.isInteger(error.status) ? error.status : 'network';
-        console.error(`Supabase user creation failed (HTTP ${status}; key source ${SUPABASE_KEY_SOURCE || 'none'}; type ${SUPABASE_KEY_TYPE}):`, String(error.message || 'Auth request failed').slice(0, 240));
-        console.warn('Supabase is configured as an optional identity mirror. Continuing with local account creation; email verification is still required. Check /api/diagnostics/supabase to fix the remote integration.');
-      }
-    }
-    const result = await issueVerification(user);
-    if (!result.ok) return json(res, 503, { ok: false, code: result.code, message: result.message, email: user.email, canResend: true });
-    return json(res, 201, { ok: true, code: result.dev ? 'dev_verification_link_logged' : 'verification_sent', message: result.dev ? 'E-poçt göndərişi bu lokal mühitdə aktiv deyil. Təsdiq keçidi server jurnalında göstərilib.' : 'Təsdiq məktubu göndərildi. E-poçt qutusunu və spam qovluğunu yoxla.', email: user.email, dev: Boolean(result.dev) });
+    if (ONE_ACCOUNT_PER_IP && db.users.some(u => u.verified && u.signupIpHash && u.signupIpHash === ipHash)) return json(res, 409, { ok: false, code: 'ip_account_limit', message: 'Bu şəbəkədən yeni hesab yaratmaq hazırda mümkün olmadı. Bir az sonra yenidən cəhd et.' });
+    const hashed = await passwordDigest(password);
+    const referrer = referralCode ? db.users.find(u => u.referralCode === referralCode && u.verified) : null;
+    const email = `${username}@username.signal-studio.invalid`;
+    const user = { id: randomUUID(), name, username, email, profileType, plan: 'free', stripeCustomerId: '', stripeSubscriptionId: '', passwordSalt: hashed.salt, passwordHash: hashed.hash, verified: true, verifiedAt: new Date().toISOString(), createdAt: new Date().toISOString(), verifyTokenHash: '', verifyExpiresAt: 0, signupIpHash: ipHash, referralCode: createReferralCode(), referredBy: referrer?.id || '', rewardPoints: 0, referralRewardProcessed: false };
+    while (db.users.some(u => u.referralCode === user.referralCode)) user.referralCode = createReferralCode();
+    db.users.push(user);
+    const rawSession = randomBytes(32).toString('base64url');
+    db.sessions = db.sessions.filter(s => s.expiresAt > Date.now());
+    db.sessions.push({ id: randomUUID(), userId: user.id, tokenHash: tokenHash(rawSession), createdAt: Date.now(), expiresAt: Date.now() + SESSION_TTL_MS });
+    persist();
+    return json(res, 201, { ok: true, code: 'account_created', message: 'Hesabın yaradıldı. Xoş gəldin!', user: safeUser(user) }, { 'Set-Cookie': cookieHeader(rawSession, SESSION_TTL_MS) });
   }
 
   if (req.method === 'POST' && path === '/api/auth/resend-verification') {
@@ -1280,11 +1258,11 @@ async function handleApi(req, res, url) {
   if (req.method === 'POST' && path === '/api/auth/login') {
     if (rateLimited(req, 'login', 10)) return json(res, 429, { ok: false, code: 'rate_limited', message: 'Çox sayda giriş cəhdi edildi. Bir az sonra yenidən yoxla.' });
     const input = await bodyJson(req);
-    const email = normalizeText(input.email, 254).toLowerCase();
+    const identifier = normalizeText(input.username || input.identifier || input.email, 254).toLowerCase();
     const password = typeof input.password === 'string' ? input.password : '';
-    const user = db.users.find(u => u.email === email);
-    if (!user || !password || !await passwordMatches(password, user)) return json(res, 401, { ok: false, code: 'invalid_credentials', message: 'E-poçt və ya şifrə yanlışdır.' });
-    if (!user.verified) return json(res, 403, { ok: false, code: 'email_not_verified', message: 'Hesabın hələ təsdiqlənməyib. E-poçt təsdiqini tamamla.', email: user.email, canResend: true });
+    const user = db.users.find(u => (u.username || '').toLowerCase() === identifier || (!u.username && (u.email || '').toLowerCase() === identifier));
+    if (!user || !password || !await passwordMatches(password, user)) return json(res, 401, { ok: false, code: 'invalid_credentials', message: 'İstifadəçi adı və ya şifrə yanlışdır.' });
+    if (!user.verified) return json(res, 403, { ok: false, code: 'account_not_active', message: 'Bu köhnə hesab hələ aktivləşdirilməyib. Mövcud hesab üçün əvvəlki təsdiq prosesi tələb olunur.', email: user.email, canResend: true });
     if (SUPABASE_AUTH_CONFIGURED) {
       try {
         // Sync verified state on login too, including older identities created before

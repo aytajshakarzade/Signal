@@ -167,9 +167,9 @@
   function showWorkspace() {
     if (!state.user) return openAuth('login');
     $('#landing-view').classList.add('hidden'); $('#site-header').classList.add('hidden'); $('#site-footer').classList.add('hidden'); $('#workspace-view').classList.remove('hidden');
-    $('#sidebar-user-name').textContent = state.user.name; $('#sidebar-user-email').textContent = state.user.email;
+    $('#sidebar-user-name').textContent = state.user.name; $('#sidebar-user-email').textContent = state.user.username ? `@${state.user.username}` : state.user.email;
     $('#user-avatar').textContent = firstInitial(state.user.name); $('#sidebar-profile-type').textContent = profileLabels[state.user.profileType] || 'İstifadəçi';
-    $('#profile-name').value = state.user.name || ''; $('#profile-email').value = state.user.email || ''; $('#profile-status').value = state.user.emailVerified ? 'Təsdiqlənib' : 'Təsdiq gözlənilir'; $('#profile-type-read').value = profileLabels[state.user.profileType] || 'Məzmun müəllifi';
+    $('#profile-name').value = state.user.name || ''; $('#profile-email').value = state.user.username ? `@${state.user.username}` : (state.user.email || ''); $('#profile-status').value = state.user.username ? 'İstifadəçi adı ilə giriş' : (state.user.emailVerified ? 'Təsdiqlənib' : 'Təsdiq gözlənilir'); $('#profile-type-read').value = profileLabels[state.user.profileType] || 'Məzmun müəllifi';
     syncBuddyUI();
     updateBillingIdentity();
     showView('overview'); void loadWorkspaceData(); window.scrollTo({ top: 0, behavior: 'smooth' }); scheduleFirstLoginTour();
@@ -315,17 +315,17 @@
     $('#auth-title').textContent = register ? 'Hesabını yarat.' : 'Yenidən xoş gəldin.';
     $('#auth-description').textContent = register ? 'Bütün əsas funksiyalara pulsuz başla.' : 'İş məkanına keçmək üçün məlumatlarını daxil et.';
     $('#name-field').classList.toggle('hidden', !register); $('#profile-type-field')?.classList.toggle('hidden', !register); $('#confirm-field').classList.toggle('hidden', !register);
-    $('#auth-name').required = register; $('#auth-confirm').required = register; $('#auth-password').autocomplete = register ? 'new-password' : 'current-password';
+    $('#auth-name').required = register; $('#auth-confirm').required = register; $('#auth-username').required = true; $('#auth-password').autocomplete = register ? 'new-password' : 'current-password';
     $('#auth-submit').textContent = register ? 'Pulsuz hesab yarat ↗' : 'Daxil ol ↗'; $('#auth-switch-copy').textContent = register ? 'Artıq hesabın var?' : 'Hələ hesabın yoxdur?'; $('#auth-switch').textContent = register ? 'Daxil ol' : 'Qeydiyyatdan keç';
     const ref = new URL(location.href).searchParams.get('ref'); if (register && ref) sessionStorage.setItem('signalReferralCode', ref);
-    authModal.classList.remove('hidden'); document.body.style.overflow = 'hidden'; setTimeout(() => $(register ? '#auth-name' : '#auth-email').focus(), 30);
+    authModal.classList.remove('hidden'); document.body.style.overflow = 'hidden'; setTimeout(() => $(register ? '#auth-name' : '#auth-username').focus(), 30);
   }
   function closeAuth() { authModal.classList.add('hidden'); document.body.style.overflow = ''; document.body.classList.remove('auth-is-open'); }
   function setAuthLoading(loading) { state.busy = loading; $('#auth-submit').disabled = loading; $('#auth-submit').textContent = loading ? 'Yoxlanılır…' : (state.authMode === 'register' ? 'Pulsuz hesab yarat ↗' : 'Daxil ol ↗'); }
   async function submitAuth(event) {
     event.preventDefault(); if (state.busy) return; clearAlert();
-    const email = $('#auth-email').value.trim().toLowerCase(), password = $('#auth-password').value, name = $('#auth-name').value.trim();
-    if (!email || !$('#auth-email').checkValidity()) return setAlert('Düzgün e-poçt ünvanı daxil et.');
+    const username = $('#auth-username').value.trim().toLowerCase(), password = $('#auth-password').value, name = $('#auth-name').value.trim();
+    if (!/^[a-z0-9_.-]{3,32}$/.test(username)) return setAlert('İstifadəçi adı 3–32 simvol olmalı, ingilis hərfləri, rəqəm, nöqtə, _ və - istifadə etməlidir.');
     if (state.authMode === 'register') {
       if (name.length < 2) return setAlert('Ad ən azı 2 simvol olmalıdır.');
       if (password.length < 8) return setAlert('Şifrə ən azı 8 simvoldan ibarət olmalıdır.');
@@ -336,16 +336,16 @@
       if (state.authMode === 'register') {
         const profileType = $('#auth-profile-type')?.value || 'creator';
         const referralCode = sessionStorage.getItem('signalReferralCode') || new URL(location.href).searchParams.get('ref') || '';
-        const result = await api('/api/auth/register', { method: 'POST', body: JSON.stringify({ name, email, password, profileType, referralCode }) });
-        $('#resend-row').classList.remove('hidden'); $('#resend-confirmation').dataset.email = result.email || email; setAlert(result.message || 'Təsdiq məktubu göndərildi.', 'success');
+        const result = await api('/api/auth/register', { method: 'POST', body: JSON.stringify({ name, username, password, profileType, referralCode }) });
+        state.user = result.user; closeAuth(); setHeaderForUser(); showWorkspace(); toast(`Xoş gəldin, ${result.user.name.split(/\s+/)[0]}!`);
       } else {
-        const result = await api('/api/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) }); state.user = result.user; closeAuth(); setHeaderForUser(); showWorkspace(); toast(`Xoş gəldin, ${result.user.name.split(/\s+/)[0]}!`);
+        const result = await api('/api/auth/login', { method: 'POST', body: JSON.stringify({ username, password }) }); state.user = result.user; closeAuth(); setHeaderForUser(); showWorkspace(); toast(`Xoş gəldin, ${result.user.name.split(/\s+/)[0]}!`);
       }
-    } catch (error) { setAlert(error.message || 'Xəta baş verdi.'); if (error.payload?.canResend || error.code === 'email_not_verified') { $('#resend-row').classList.remove('hidden'); $('#resend-confirmation').dataset.email = error.payload?.email || email; } }
+    } catch (error) { setAlert(error.message || 'Xəta baş verdi.'); }
     finally { setAuthLoading(false); }
   }
   async function resendVerification() {
-    const email = $('#resend-confirmation').dataset.email || $('#auth-email').value.trim().toLowerCase(); if (!email) return setAlert('Əvvəlcə e-poçt ünvanını daxil et.');
+    const email = $('#resend-confirmation').dataset.email || ''; if (!email) return setAlert('Bu hesabda e-poçt təsdiqi istifadə olunmur.');
     const button = $('#resend-confirmation'); button.disabled = true;
     try { const result = await api('/api/auth/resend-verification', { method: 'POST', body: JSON.stringify({ email }) }); setAlert(result.message || 'Sorğu qəbul edildi.', 'success'); }
     catch (error) { setAlert(error.message); } finally { button.disabled = false; }

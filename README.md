@@ -167,3 +167,8 @@ Hesabatlar həm iki formatlı CSV faylını qəbul edir:
 - `date, platform, title, views, likes, comments, shares, saves` — qarşılıqlı əlaqə növləri ayrı sütunlarda olan fayllar üçün.
 
 İdxalda rəqəmlərdəki minlik vergüllər və `ER` sütunundakı `%` işarəsi təmizlənir. Ümumi `interactions` rəqəmi veriləndə hesabat həmin cəmi istifadə edir, onu likes/comments/shares ilə ikinci dəfə toplamır. ER hesabatda baxış və qarşılıqlı əlaqə rəqəmlərindən yenidən hesablanır.
+
+
+## Giriş (v21)
+
+Qeydiyyat və giriş istifadəçi adı + şifrə ilə işləyir; e-poçt göndərişi və təsdiqi tələb olunmur. İstifadəçi adı 3–32 simvol, ingilis hərfləri/rəqəmlər/nöqtə/_/- qəbul edir. Şifrə minimum 8 simvoldur. `.env` bu yeniləmə üçün dəyişdirilməyib.
