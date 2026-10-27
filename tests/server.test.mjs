@@ -57,7 +57,8 @@ test('health endpoint reports email configuration without exposing secrets', asy
   assert.equal(body.emailProvider, 'none');
   assert.equal(typeof body.nodemailerAvailable, 'boolean');
   assert.equal(body.apifyConfigured, false);
-  assert.equal(body.build, 'v18-video-gates-trilingual-ui');
+  assert.equal(body.build, 'v20-mobile-layout-signup-fix');
+  assert.equal(body.oneAccountPerIp, false, 'shared mobile/Wi-Fi IPs must not block legitimate sign-ups by default');
   assert.equal(body.envFileLoaded, false, 'test servers explicitly skip the private local .env file');
   assert.equal(body.supabaseUrlConfigured, false);
   assert.equal(JSON.stringify(body).includes('RESEND_API_KEY'), false);
@@ -132,7 +133,7 @@ test('frontend is served from the same origin', async () => {
   const html = await response.text();
   assert.equal(response.status, 200);
   assert.match(html, /Signal Studio — Mətn və video auditi/);
-  assert.match(html, /v=20261026-v18-quality-gates/);
+  assert.match(html, /v=20261027-v20-mobile-layout/);
   assert.match(html, /id="view-connections"/);
   assert.match(html, /id="buddy-settings-card"|class="buddy-settings-card"/);
   assert.match(html, /data-buddy-avatar-choice/);

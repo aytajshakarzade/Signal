@@ -60,7 +60,9 @@ if (process.env.SIGNAL_STUDIO_SKIP_DOTENV !== 'true' && existsSync(MAIL_CONFIG_F
 
 const PORT = Math.max(1, Math.min(65535, Number.parseInt(process.env.PORT || '3000', 10) || 3000));
 const NODE_ENV = process.env.NODE_ENV || 'development';
-const BASE_URL = (process.env.BASE_URL || `http://localhost:${PORT}`).replace(/\/$/, '');
+const configuredBaseUrl = String(process.env.BASE_URL || '').trim().replace(/\/$/, '');
+const invalidBaseUrl = /YOUR-RENDER-SERVICE/i.test(configuredBaseUrl) || (NODE_ENV === 'production' && /^(https?:\/\/)?(localhost|127\.0\.0\.1)(:\d+)?$/i.test(configuredBaseUrl));
+const BASE_URL = (invalidBaseUrl ? (process.env.RENDER_EXTERNAL_URL || `http://localhost:${PORT}`) : (configuredBaseUrl || process.env.RENDER_EXTERNAL_URL || `http://localhost:${PORT}`)).replace(/\/$/, '');
 const EMAIL_FROM = process.env.EMAIL_FROM || '';
 const RESEND_API_KEY = process.env.RESEND_API_KEY || '';
 const GMAIL_USER = (process.env.GMAIL_USER || '').trim();
@@ -116,8 +118,10 @@ const SUPABASE_KEY_TYPE = !SUPABASE_URL ? 'url_missing'
     : 'server_key_candidate')
   : SUPABASE_KEY_CANDIDATES.length ? 'publishable_key_only' : 'key_missing';
 const SUPABASE_AUTH_CONFIGURED = Boolean(SUPABASE_URL && SUPABASE_ADMIN_KEY);
-const APP_BUILD = 'v18-video-gates-trilingual-ui';
-const ONE_ACCOUNT_PER_IP = process.env.ONE_ACCOUNT_PER_IP ? process.env.ONE_ACCOUNT_PER_IP === 'true' : NODE_ENV === 'production';
+const APP_BUILD = 'v20-mobile-layout-signup-fix';
+// IP-based one-account enforcement blocks legitimate sign-ups on shared Wi-Fi/mobile networks.
+// Keep it opt-in through ONE_ACCOUNT_PER_IP=true; rate limiting still protects the endpoint.
+const ONE_ACCOUNT_PER_IP = String(process.env.ONE_ACCOUNT_PER_IP || '').toLowerCase() === 'true';
 const DATA_FILE = resolve(ROOT, process.env.DATA_FILE || 'data/app-data.json');
 const SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 14;
 const VERIFICATION_TTL_MS = 1000 * 60 * 60 * 24;

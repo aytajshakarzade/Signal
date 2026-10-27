@@ -1,0 +1,18 @@
+Signal Studio — Mobile Polish + Responsive + Signup Fix (v20)
+
+Changes in this package:
+- Responsive layout hardening for mobile, tablet, and desktop.
+- Fixed the CSS cascade that could display the hidden dashboard while logged out.
+- Collapsed mobile navigation behind a working hamburger menu; moved AZ/EN/RU choices into that menu on narrow screens.
+- Simplified the mobile header and tightened dashboard cards, headings, and touch targets.
+- Better mobile auth modal sizing, form controls, and readable error messages.
+- Signup logic avoids blocking legitimate users on shared Wi-Fi/mobile carrier IPs by default; IP restriction is opt-in only.
+- BASE_URL supports the public Render URL for email verification links.
+- Tests: npm test (40 passing in the validation run).
+
+Deployment notes:
+1. Do not upload your real .env file to GitHub.
+2. Keep existing secret environment variable names and values in Render.
+3. Set BASE_URL=https://signal-hzo6.onrender.com in Render Environment.
+4. ONE_ACCOUNT_PER_IP=false is the default. Do not enable it unless you intentionally want to limit registrations per public IP.
+5. Upload/commit this package's source files to the connected GitHub repository to deploy this code version. A Render environment-only redeploy does not update source code.
