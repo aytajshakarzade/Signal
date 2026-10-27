@@ -1,0 +1,22 @@
+SIGNAL STUDIO — GMAIL TƏSDİQ MƏKTUBU QURULUMU
+
+1. Bu layihə qovluğunda terminal/CMD aç.
+2. `email.local.example` faylının surətini `email.local` adı ilə yarat.
+   Windows CMD: copy email.local.example email.local
+3. `email.local` faylını Notepad ilə aç və Gmail məlumatlarını daxil et:
+   GMAIL_USER= Google hesabının tam Gmail ünvanı
+   GMAIL_APP_PASSWORD= Google-da yaratdığın 16 simvolluq App Password
+   App Password-u boşluqsuz yazmaq olar. Onu heç kimə göndərmə.
+4. Layihə qovluğunda bu əmri icra et: `npm install`
+5. Server işləyirsə Ctrl+C ilə dayandır, sonra `npm start` əmrini ver.
+6. Saytda başqa bir e-poçt ünvanı ilə qeydiyyatdan keç. Təsdiq məktubunu Inbox və Spam qovluqlarında yoxla.
+7. Məktubdakı “E-poçtu təsdiqlə” düyməsinə bas. Lokal kompüterdə server işlək olmalıdır.
+
+VACİB:
+- Bu paylaşılan ZIP real `.env`, Gmail App Password, API açarları və əvvəlki istifadəçi/sessiya məlumatlarını ehtiva etmir.
+- Gmail göndərişi alınmasa və Resend konfiqurasiya edilibsə, server Resend ilə yenidən göndərməyə cəhd edir. Development rejimində hər iki göndəriş alınmazsa, lokal təsdiq linki yalnız CMD pəncərəsində göstərilə bilər.
+- `email.local` məxfi fayldır və `.gitignore`-a əlavə olunub. Onu paylaşma və Git-ə yükləmə.
+- App Password Gmail hesabına giriş üçün həssas məlumatdır. Sızarsa Google hesabından ləğv et və yenisini yarat.
+- Orijinal yüklənmiş arxivdə məxfi açarlar ola bildiyi üçün həmin arxivdəki açarları provayder panellərində yenilə/ləğv et. Yeni ZIP bu açarları daşımır.
+- Bu lokal test üçündür. İctimai istifadəçilər internet üzərindən qeydiyyatdan keçəcəksə, layihə host edilməli və `BASE_URL` real HTTPS domeninə yönəlməlidir.
+- Gmail-in göndəriş limitləri var; böyük istehsal yükü üçün domeni təsdiqlənmiş tranzaksion email xidməti daha uyğundur.

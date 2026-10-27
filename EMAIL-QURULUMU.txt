@@ -1,0 +1,39 @@
+SIGNAL STUDIO — QURULUŞ: E-POÇT, SUPABASE VƏ LOKAL TƏSDİQ
+
+1. Köhnə server pəncərələrini dayandır və bu qovluqdan START-SIGNAL-STUDIO.bat faylını aç.
+2. http://localhost:3000/api/health ünvanında build dəyərinin v18-video-gates-trilingual-ui olduğunu yoxla.
+
+GMAIL / RESEND — REAL E-POÇT
+- Gmail SMTP konfiqurasiyası üçün `email.local.example` faylını `email.local` adı ilə kopyala və Gmail hesabı/App Password əlavə et.
+- RESEND_API_KEY: Resend panelində yaradılan API açarı. Gmail göndərişi alınmadıqda düzgün qurulmuş Resend ehtiyat kimi sınaqdan keçirilir.
+- EMAIL_FROM: Resend-də təsdiqlənmiş domenə aid göndərən ünvanı. onboarding@resend.dev ünvanı yalnız məhdud sınaq üçün uyğundur.
+- Real alıcılara göndərmək üçün Resend Domains bölməsində öz domenini təsdiqlə, sonra EMAIL_FROM-u həmin domen ünvanına dəyiş.
+- Domen təsdiqlənməyibsə, test alıcı məhdudiyyəti və ya Resend-in digər göndəriş qaydaları məktubu rədd edə bilər.
+
+LOKAL TEST — E-POÇT GETMƏDİKDƏ
+- Lokal təsdiq linki yalnız heç bir e-poçt provayderi konfiqurasiya edilmədikdə göstərilir. Gmail və ya Resend qurulubsa, göndəriş xətası uğurlu qeydiyyat kimi gizlədilmir.
+- Xəta varsa, serveri başladan CMD pəncərəsində Gmail SMTP və Resend xətasını yoxla. `/api/health` endpoint-i seçilmiş provayderi və Nodemailer paketinin olub-olmadığını təhlükəsiz şəkildə göstərir.
+- Bu mexanizm yalnız lokal development rejimində işləyir; production rejimində aktiv deyil.
+- localhost linki başqa cihazdan açılmaya bilər. Lokal test linkini heç kimlə paylaşma.
+
+SUPABASE AUTH
+- SUPABASE_URL tam Project URL olmalıdır: https://YOUR_PROJECT_ID.supabase.co
+- SUPABASE_SECRET_KEY və ya SUPABASE_SERVICE_ROLE_KEY sahələrində yalnız server açarı (sb_secret_...) istifadə et; sb_publishable_ açarı server açarı deyil.
+- Açarları public/assets qovluğuna və ya brauzer koduna yerləşdirmə.
+- Serveri .env dəyişikliklərindən sonra yenidən başlat. /api/health yalnız konfiqurasiya vəziyyətini göstərir; bu, real e-poçtun çatdırılmasını təsdiqləmir.
+- Köhnə versiyada yalnız lokal JSON-da yaranmış, hələ təsdiqlənməmiş hesaba görə problem qalarsa, həmin e-poçtla qeydiyyatı yenidən göndər və ən yeni lokal/elektron təsdiq linkindən istifadə et.
+
+DİL VƏ GÖRÜNÜŞ
+- AZ / EN / RU düymələri ilə əsas səhifənin və iş panelinin dilini dəyiş.
+- Tema düyməsi açıq və tünd görünüş arasında seçim edir; hər iki seçim brauzerdə yadda saxlanılır.
+
+TƏHLÜKƏSİZLİK
+- API açarlarını, parolları və canlı təsdiq linklərini paylaşma. Bu layihənin `.env` faylı yenilənərkən dəyişdirilmir. `.env` faylını başqaları ilə paylaşma; açarlar əvvəllər ictimai şəkildə dərc edilibsə, onları provayder panelindən yenilə.
+
+
+VACIB: E-poct niye gelmeye biler?
+- Server jurnali Gmail SMTP xetasini ve Resend-in qaytardigi cavabi gosterecek. Teyin edilmis provayderin xetasi artiq lokal tesdiq kimi ugurlu gosterilmir.
+- Nodemailer paketi yoxdursa, `npm start` indi catismayan paketleri qurasdirmaga cehd edir. Alinmasa, layihenin qovlugunda `npm install` icra et.
+- `onboarding@resend.dev` kimi test gondericileri istediyin butun alicilara mektub gondermeye icaze vermeye biler. Her kese gonderis ucun Resend-de oz domenini tesdiq et ve gonderici unvanini hemin domenle istifade et; yaxud duzgun Gmail App Password ile SMTP qur.
+- Lokal isletmede tesdiq kecidinin domen hissesi `BASE_URL`-dan goturulur. Basqa cihazin da linki acmasi ucun server aciq, hamidan elcatandir bir HTTPS domeninde islemelidir; `localhost` yalniz oz kompüterine aiddir.
+- `.env` faylini bu paketde deyismek teleb olunmur. Acarlari ve sifreleri hec kimle paylasma.

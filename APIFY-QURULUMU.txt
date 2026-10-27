@@ -1,0 +1,26 @@
+SIGNAL STUDIO — APIFY QURULUMU
+==============================
+
+1) Apify Console-u aç: https://console.apify.com/settings/integrations
+2) API tokens bölməsinə daxil ol və həqiqi tokeni köçür. Token ekranda ****** kimi görünürsə, ulduzları köçürmək kifayət etmir; token dəyərini Apify Console-dan görmək və ya yenisini yaratmaq lazımdır.
+3) Signal Studio qovluğunda package.json ilə eyni qovluqdakı .env faylını Notepad ilə aç.
+4) APIFY_API_TOKEN= sətrini tap və tokeni = işarəsindən sonra yaz. Məsələn:
+   APIFY_API_TOKEN=apify_api_xxxxxxxxxxxxx
+   Dırnaq işarəsi qoyma. Tokeni heç kimlə paylaşma.
+5) .env faylını saxla, köhnə CMD serverini Ctrl+C ilə dayandır və START-SIGNAL-STUDIO.bat ilə yenidən başlat.
+6) Sayta daxil ol və İş məkanı → Platforma bağlantıları bölməsini aç. Platformanı seç, public profil/kanal linkini və ya LinkedIn axtarış sözünü daxil et, razılıq qutusunu işarələ və Məlumatları gətir düyməsinə bas.
+7) Nəticələr uğurla gələndə hesabatlara əlavə edilir. CSV və JSON kimi endirmək də mümkündür.
+
+DƏSTƏKLƏNƏN PUBLIC DATA
+- Instagram: public profil və Reel məlumatları; views/likes/comments/caption/hashtag və digər sahələr actor nəticəsində varsa.
+- Facebook: açıq Page/post-lar; şəxsi profillər və gizli qruplar deyil.
+- TikTok: public profil videoları; actor-un əldə etdiyi metriklər.
+- YouTube: public Shorts.
+- LinkedIn: public post axtarışı; şəxsi hesabın private analytics məlumatı deyil.
+
+XƏRCLƏR VƏ MƏHDUDİYYƏTLƏR
+- Apify actor çağırışları sənin Apify hesabındakı kredit/balansdan istifadə edə bilər. Başlanğıcda 3–10 nəticə seç və Apify Console-da usage/cost-a bax.
+- Transcript və başqa əlavə data parametrləri əlavə xərc yarada bilər. Transcript yalnız ehtiyac olduqda seç.
+- Instagram/Facebook/LinkedIn platformalarında birbaşa kart linkləri rəsmi sayta aparır. Bu, private Insights-a OAuth giriş deyil. Private analytics üçün hər platformada ayrıca rəsmi developer tətbiqi və istifadəçi icazələri lazımdır.
+- Apify tokeni yalnız serverdə istifadə olunur; public/assets qovluğuna və brauzer koduna yazma.
+- ZIP-də sənin əvvəlki .env dəyərlərin saxlanılır. ZIP-i və .env faylını ictimai paylaşma.

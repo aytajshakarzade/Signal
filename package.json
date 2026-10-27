@@ -1,0 +1,20 @@
+{
+  "name": "signal-studio-ai-social-content-predictor",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Azerbaijani-first AI Social Content Predictor starter with responsive trilingual app with content/video review, analytics, and secure email-verification auth API.",
+  "type": "module",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "prestart": "node scripts/ensure-deps.mjs",
+    "start": "node src/server.mjs",
+    "dev": "node --watch src/server.mjs",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "ffmpeg-static": "^5.2.0",
+    "nodemailer": "^6.10.1"
+  }
+}

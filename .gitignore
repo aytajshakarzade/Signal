@@ -1,0 +1,10 @@
+node_modules/
+.env
+.data/
+data/*.json
+.data-secret
+*.log
+.DS_Store
+
+# Private Gmail SMTP credentials (keep out of version control)
+email.local

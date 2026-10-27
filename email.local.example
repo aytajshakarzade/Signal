@@ -1,0 +1,4 @@
+# Copy this file to email.local and fill in your own local Gmail credentials.
+# Never share email.local or commit it to version control.
+GMAIL_USER=your-account@gmail.com
+GMAIL_APP_PASSWORD=your-16-character-app-password
